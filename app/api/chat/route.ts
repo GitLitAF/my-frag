@@ -62,9 +62,17 @@ export async function POST(req: Request) {
   const modelClient = getModelClient(model, config)
 
   try {
+    console.log('Sending request to LiteLLM:', {
+      model: model.id,
+      messages,
+      config: modelParams,
+    })
+
     const stream = await modelClient.chat.completions.stream({
       messages,
     })
+
+    console.log('Got response from LiteLLM')
 
     return new Response(stream, {
       headers: {

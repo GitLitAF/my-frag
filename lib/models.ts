@@ -25,6 +25,12 @@ export async function getModelCompletion(
   config: LLMModelConfig,
   signal?: AbortSignal
 ) {
+  console.log('Making request to LiteLLM:', {
+    url: LITELLM_BASE_URL,
+    model: model.id,
+    config,
+  })
+
   const response = await fetch(`${LITELLM_BASE_URL}/v1/chat/completions`, {
     method: 'POST',
     headers: {
@@ -40,8 +46,14 @@ export async function getModelCompletion(
     signal,
   })
 
+  console.log('Got response from LiteLLM:', {
+    status: response.status,
+    statusText: response.statusText,
+  })
+
   if (!response.ok) {
     const error = await response.json()
+    console.error('Error from LiteLLM:', error)
     throw new Error(error.message || 'Failed to get completion')
   }
 
