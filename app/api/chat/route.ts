@@ -1,11 +1,11 @@
 import { Duration } from '@/lib/duration'
-import { getModelClient } from '@/lib/models'
 import { LLMModel, LLMModelConfig } from '@/lib/models'
 import { toPrompt } from '@/lib/prompt'
 import ratelimit from '@/lib/ratelimit'
 import { fragmentSchema as schema } from '@/lib/schema'
 import { Templates } from '@/lib/templates'
-import { streamObject, LanguageModel, CoreMessage } from 'ai'
+import { CoreMessage } from 'ai'
+import { LITELLM_API_KEY, LITELLM_BASE_URL } from '@/lib/config'
 
 export const maxDuration = 60
 
@@ -54,25 +54,66 @@ export async function POST(req: Request) {
 
   console.log('userID', userID)
   console.log('teamID', teamID)
-  // console.log('template', template)
   console.log('model', model)
-  // console.log('config', config)
 
   const { model: modelNameString, apiKey: modelApiKey, ...modelParams } = config
-  const modelClient = getModelClient(model, config)
 
   try {
-    const stream = await streamObject({
-      model: modelClient as LanguageModel,
-      schema,
-      system: toPrompt(template),
+    console.log('Sending request to LiteLLM:', {
+      model: model.id,
       messages,
-      maxRetries: 0, // do not retry on errors
-      ...modelParams,
+      config: modelParams,
     })
 
-    return stream.toTextStreamResponse()
+    // Add system message if template is provided
+    const messagesWithSystem = template 
+      ? [{ role: 'system', content: toPrompt(template) }, ...messages]
+      : messages;
+
+    // Use LiteLLM API directly
+    const response = await fetch(`${LITELLM_BASE_URL}/v1/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${LITELLM_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: model.id,
+        messages: messagesWithSystem,
+        stream: true,
+        ...modelParams,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('LiteLLM API error:', errorText);
+      let errorMessage = 'Failed to get completion';
+      
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.error?.message || errorMessage;
+      } catch (e) {
+        // If parsing fails, use the error text
+        errorMessage = errorText || errorMessage;
+      }
+      
+      throw new Error(errorMessage);
+    }
+
+    console.log('Got response from LiteLLM');
+
+    // Return the streaming response
+    return new Response(response.body, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    })
   } catch (error: any) {
+    console.error('Error in chat route:', error);
+    
     const isRateLimitError =
       error && (error.statusCode === 429 || error.message.includes('limit'))
     const isOverloadedError =

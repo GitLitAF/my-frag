@@ -1,8 +1,19 @@
 import { TemplateId } from './templates'
-import { ExecutionError, Result } from '@e2b/code-interpreter'
 
 type ExecutionResultBase = {
-  sbxId: string
+  id: string
+}
+
+export type ExecutionError = {
+  name: string
+  message: string
+  stack?: string
+}
+
+export type CellResult = {
+  type: 'text' | 'image' | 'html' | 'error'
+  content: string
+  mimeType?: string
 }
 
 export type ExecutionResultInterpreter = ExecutionResultBase & {
@@ -10,7 +21,7 @@ export type ExecutionResultInterpreter = ExecutionResultBase & {
   stdout: string[]
   stderr: string[]
   runtimeError?: ExecutionError
-  cellResults: Result[]
+  cellResults: CellResult[]
 }
 
 export type ExecutionResultWeb = ExecutionResultBase & {
