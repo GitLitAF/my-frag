@@ -41,36 +41,61 @@ export function FragmentInterpreter({
 
   // The AI-generated code experienced runtime error
   if (runtimeError) {
-    const { name, value, traceback } = runtimeError
     return (
       <div className="p-4">
         <Alert variant="destructive">
           <Terminal className="h-4 w-4" />
           <AlertTitle>
-            {name}: {value}
+            {runtimeError.name}: {runtimeError.message}
           </AlertTitle>
           <AlertDescription className="font-mono whitespace-pre-wrap">
-            {traceback}
+            {runtimeError.stack}
           </AlertDescription>
         </Alert>
       </div>
     )
   }
 
-  // Cell results can contain text, pdfs, images, and code (html, latex, json)
-  // TODO: Show all results
-  // TODO: Check other formats than `png`
+  // Cell results can contain text, images, html, or errors
   if (cellResults.length > 0) {
-    const imgInBase64 = cellResults[0].png
     return (
       <div className="flex flex-col h-full">
         <div className="w-full flex-1 p-4 flex items-start justify-center border-b">
-          <Image
-            src={`data:image/png;base64,${imgInBase64}`}
-            alt="result"
-            width={600}
-            height={400}
-          />
+          {cellResults.map((result, index) => {
+            switch (result.type) {
+              case 'text':
+                return (
+                  <pre key={index} className="text-xs">
+                    {result.content}
+                  </pre>
+                )
+              case 'image':
+                return (
+                  <Image
+                    key={index}
+                    src={`data:${result.mimeType || 'image/png'};base64,${result.content}`}
+                    alt="result"
+                    width={600}
+                    height={400}
+                  />
+                )
+              case 'html':
+                return (
+                  <div
+                    key={index}
+                    dangerouslySetInnerHTML={{ __html: result.content }}
+                  />
+                )
+              case 'error':
+                return (
+                  <pre key={index} className="text-xs text-red-500">
+                    {result.content}
+                  </pre>
+                )
+              default:
+                return null
+            }
+          })}
         </div>
         <LogsOutput stdout={stdout} stderr={stderr} />
       </div>

@@ -80,7 +80,8 @@ export class Sandbox {
           content: output,
         }))
       }
-    } catch (err) {
+    } catch (error) {
+      const err = error as Error
       return {
         logs: { stdout: [], stderr: [] },
         error: {

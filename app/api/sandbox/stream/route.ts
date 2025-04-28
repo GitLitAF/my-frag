@@ -102,12 +102,13 @@ export async function POST(req: Request) {
         })
       }
     } catch (error) {
+      const err = error as Error
       await writeToStream({
         type: 'error',
         error: {
-          name: error.name,
-          message: error.message,
-          stack: error.stack,
+          name: err.name,
+          message: err.message,
+          stack: err.stack,
         },
       })
     } finally {

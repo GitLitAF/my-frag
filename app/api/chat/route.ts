@@ -59,19 +59,12 @@ export async function POST(req: Request) {
   // console.log('config', config)
 
   const { model: modelNameString, apiKey: modelApiKey, ...modelParams } = config
-  const modelClient = getModelClient(model, config)
 
   try {
-    const stream = await streamObject({
-      model: modelClient as LanguageModel,
-      schema,
-      system: toPrompt(template),
-      messages,
-      maxRetries: 0, // do not retry on errors
-      ...modelParams,
+    // TODO: Implement chat functionality without using AI SDK
+    return new Response('Chat functionality not yet implemented', {
+      status: 501,
     })
-
-    return stream.toTextStreamResponse()
   } catch (error: any) {
     const isRateLimitError =
       error && (error.statusCode === 429 || error.message.includes('limit'))

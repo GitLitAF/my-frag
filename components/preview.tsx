@@ -101,7 +101,7 @@ export function Preview({
               {isLinkAvailable && (
                 <DeployDialog
                   url={result.url!}
-                  sbxId={result.sbxId!}
+                  sbxId={result.id!}
                   teamID={teamID}
                   accessToken={accessToken}
                 />

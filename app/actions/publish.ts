@@ -1,7 +1,6 @@
 'use server'
 
 import { Duration, ms } from '@/lib/duration'
-import { Sandbox } from '@e2b/code-interpreter'
 import { kv } from '@vercel/kv'
 import { customAlphabet } from 'nanoid'
 
@@ -15,16 +14,6 @@ export async function publish(
   accessToken: string | undefined,
 ) {
   const expiration = ms(duration)
-  await Sandbox.setTimeout(sbxId, expiration, {
-    ...(teamID && accessToken
-      ? {
-          headers: {
-            'X-Supabase-Team': teamID,
-            'X-Supabase-Token': accessToken,
-          },
-        }
-      : {}),
-  })
 
   if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
     const id = nanoid()
