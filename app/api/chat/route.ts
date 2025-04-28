@@ -68,13 +68,28 @@ export async function POST(req: Request) {
       config: modelParams,
     })
 
-    const stream = await modelClient.chat.completions.stream({
-      messages,
+    const response = await fetch(`${process.env.LITELLM_BASE_URL || 'https://nebularelayoceantree-5e17c78de697.herokuapp.com'}/v1/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.LITELLM_API_KEY || 'sk-oeD642K51JJvgL2QA9hu-w'}`,
+      },
+      body: JSON.stringify({
+        model: model.id,
+        messages,
+        stream: true,
+        ...modelParams,
+      }),
     })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.message || 'Failed to get completion')
+    }
 
     console.log('Got response from LiteLLM')
 
-    return new Response(stream, {
+    return new Response(response.body, {
       headers: {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
